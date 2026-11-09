@@ -115,13 +115,32 @@ export function projectName(root: string): string {
   } catch {
     // no settings yet: the folder names it
   }
-  let at = root;
+  return path.basename(repositoryOf(root) ?? root);
+}
+
+// The git repository a folder sits in: the nearest folder at or above it holding .git.
+export function repositoryOf(folder: string): string | null {
+  let at = folder;
   for (;;) {
-    if (existsSync(path.join(at, ".git"))) return path.basename(at);
+    if (existsSync(path.join(at, ".git"))) return at;
     const up = path.dirname(at);
-    if (up === at) return path.basename(root);
+    if (up === at) return null;
     at = up;
   }
+}
+
+// Where two projects share a name, each is followed by where it sits in its repository, or by its own folder outside
+// one, as the app names its tabs: "eidos.examples · academy".
+export function distinctNames(projects: Project[]): Project[] {
+  return projects.map((project) => {
+    if (projects.filter((other) => other.name === project.name).length < 2) return project;
+    const repository = repositoryOf(project.root);
+    const place =
+      repository && repository !== project.root
+        ? path.relative(repository, project.root).split(path.sep).join("/")
+        : path.basename(project.root);
+    return { ...project, name: `${project.name} · ${place}` };
+  });
 }
 
 // Every project this machine knows, each once: the app's recent ones first, newest first, then the rest by name.
@@ -151,6 +170,8 @@ export function knownProjects(
     seen.add(key);
     rest.push({ root: key, name: projectName(key), opened: null });
   }
-  rest.sort((a, b) => a.name.localeCompare(b.name));
-  return [...out, ...rest];
+  const named = distinctNames([...out, ...rest]);
+  const recentCount = out.length;
+  const sortedRest = named.slice(recentCount).sort((a, b) => a.name.localeCompare(b.name));
+  return [...named.slice(0, recentCount), ...sortedRest];
 }

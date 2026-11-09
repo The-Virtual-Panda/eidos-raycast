@@ -7,7 +7,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { blueprintEntry, docEntries, markedSnippet, matches, taskEntry } from "../src/lib/index";
 import { markdownLink, openLink } from "../src/lib/links";
-import { knownProjects, projectName, projectsFolder, recentProjects, shownFolder, withFolders } from "../src/lib/projects";
+import { distinctNames, knownProjects, projectName, projectsFolder, recentProjects, shownFolder, withFolders } from "../src/lib/projects";
 
 function project(folder: string, product?: string): string {
   mkdirSync(path.join(folder, ".eidos", "plugins", "eidosmd"), { recursive: true });
@@ -136,4 +136,20 @@ test("a project folder is added once, by its whole path, and shown with ~ for th
   assert.equal(shownFolder("/home/ana/dev", "/home/ana"), "~/dev");
   assert.equal(shownFolder("/home/ana", "/home/ana"), "~");
   assert.equal(shownFolder("/home/anabel/dev", "/home/ana"), "/home/anabel/dev");
+});
+
+test("projects that share a name are told apart by where each sits in its repository, as the app's tabs are", () => {
+  const home = mkdtempSync(path.join(tmpdir(), "eidos-raycast-"));
+  mkdirSync(path.join(home, "examples", ".git"), { recursive: true });
+  const academy = project(path.join(home, "examples", "academy"));
+  const world = project(path.join(home, "examples", "world"));
+  const solo = project(path.join(home, "solo"), "Solo");
+  assert.deepEqual(
+    distinctNames([
+      { root: academy, name: projectName(academy), opened: null },
+      { root: world, name: projectName(world), opened: null },
+      { root: solo, name: projectName(solo), opened: null },
+    ]).map((entry) => entry.name),
+    ["examples · academy", "examples · world", "Solo"],
+  );
 });
