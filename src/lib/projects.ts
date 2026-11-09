@@ -126,11 +126,14 @@ export function projectName(root: string): string {
 
 // Every project this machine knows, each once: the app's recent ones first, newest first, then the rest by name.
 // A project that has moved or been deleted is left out.
-export function knownProjects(options: { dataDir?: string; extraFolders?: string[] } = {}): Project[] {
+export function knownProjects(
+  options: { dataDir?: string; extraFolders?: string[]; includeRecent?: boolean } = {},
+): Project[] {
   const dataDir = options.dataDir ?? appDataDir();
   const seen = new Set<string>();
   const out: Project[] = [];
-  for (const { root, opened } of recentProjects(dataDir)) {
+  const recent = options.includeRecent === false ? [] : recentProjects(dataDir);
+  for (const { root, opened } of recent) {
     const key = path.resolve(root);
     if (seen.has(key) || !isProject(key)) continue;
     seen.add(key);

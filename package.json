@@ -48,6 +48,15 @@
   ],
   "preferences": [
     {
+      "name": "includeRecent",
+      "title": "Recent Projects",
+      "label": "Include projects Eidos MD opened lately",
+      "description": "Off, only your Project Folders and projects folder are listed: for screenshots, or sharing your screen.",
+      "type": "checkbox",
+      "required": false,
+      "default": true
+    },
+    {
       "name": "editor",
       "title": "Editor",
       "description": "The app Open in Editor uses. Left empty, you pick one each time.",

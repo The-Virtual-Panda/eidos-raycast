@@ -50,6 +50,11 @@ test("the projects are the app's recent ones, newest first, then the projects fo
     ],
     "a moved project is left out, one listed twice is listed once, and node_modules is never searched",
   );
+  assert.deepEqual(
+    knownProjects({ dataDir: data, extraFolders: [path.join(home, "side")], includeRecent: false }).map((entry) => entry.name),
+    ["idea", "Northwind"],
+    "without the recent list, only the folders' projects, by name",
+  );
 });
 
 test("the recent list is read from its `recent` entries alone, and a missing or broken file gives none", () => {

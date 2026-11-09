@@ -8,6 +8,7 @@ import { DOWNLOAD_URL, openLink } from "./lib/links";
 import { knownProjects, type Project } from "./lib/projects";
 
 export interface Preferences {
+  includeRecent?: boolean;
   editor?: { path: string; name: string; bundleId?: string };
   eidosPath?: string;
 }
@@ -24,10 +25,15 @@ export function useProjectFolders() {
 
 export function useProjects() {
   const { folders, isLoading: foldersLoading } = useProjectFolders();
-  const projects = useCachedPromise(async (extra: string[]) => knownProjects({ extraFolders: extra }), [folders], {
-    keepPreviousData: true,
-    execute: !foldersLoading,
-  });
+  const { includeRecent } = preferences();
+  const projects = useCachedPromise(
+    async (extra: string[], includeRecent: boolean) => knownProjects({ extraFolders: extra, includeRecent }),
+    [folders, includeRecent !== false],
+    {
+      keepPreviousData: true,
+      execute: !foldersLoading,
+    },
+  );
   return { ...projects, isLoading: projects.isLoading || foldersLoading };
 }
 
