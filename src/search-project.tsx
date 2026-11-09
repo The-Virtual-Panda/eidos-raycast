@@ -4,7 +4,7 @@ import { Action, ActionPanel, Color, Icon, Keyboard, List } from "@raycast/api";
 import { useCachedPromise, useCachedState, usePromise } from "@raycast/utils";
 import path from "node:path";
 import { useEffect, useMemo, useState } from "react";
-import { eidosJson, findEidos, type Runner } from "./lib/eidos";
+import { eidosJson, findEidos, hasCommand, type Runner } from "./lib/eidos";
 import { loadIndex, markedSnippet, matches, searchBodies, type BodyHit, type Entry } from "./lib/index";
 import { markdownLink } from "./lib/links";
 import type { Project } from "./lib/projects";
@@ -61,12 +61,19 @@ export default function SearchProject(props: { initialRoot?: string }) {
       keepPreviousData: false,
     },
   );
+  const searchable = usePromise(
+    (runnerNow: Runner | undefined) => (runnerNow ? hasCommand(runnerNow, "search") : Promise.resolve(false)),
+    [runner.data],
+    { execute: Boolean(runner.data) },
+  );
   const bodies = usePromise(
     (runnerNow: Runner | undefined, rootNow: string, query: string) =>
       runnerNow ? searchBodies(runnerNow, rootNow, query) : Promise.resolve([]),
     [runner.data, root, paused],
     {
-      execute: Boolean(runner.data) && root !== "" && paused.trim().length >= 2,
+      execute: searchable.data === true && root !== "" && paused.trim().length >= 2,
+      // a failed text search is shown as a row in its own section, never as a toast over the results
+      onError: () => undefined,
     },
   );
 
@@ -147,16 +154,20 @@ export default function SearchProject(props: { initialRoot?: string }) {
                 onToggleDetail={() => setShowingDetail(!showingDetail)}
               />
             ))}
-            {bodies.error && query.length >= 2 ? (
-              <List.Item
-                icon={{ source: Icon.Warning, tintColor: Color.Orange }}
-                title="Searching the text needs a newer Eidos MD"
-                subtitle={bodies.error.message}
-                actions={
-                  <ActionPanel>
-                    <DownloadAction />
-                  </ActionPanel>
+            {query.length >= 2 && searchable.data === false ? (
+              <NoticeItem
+                title="Update Eidos MD to search the text"
+                markdown={
+                  "Searching the words inside your blueprints needs a newer Eidos MD than the one on this computer. Titles, ids, and properties are still found as you type.\n\nUpdate the app from its Help menu, or download the latest version."
                 }
+                detail={showingDetail}
+              />
+            ) : null}
+            {query.length >= 2 && searchable.data === true && bodies.error ? (
+              <NoticeItem
+                title="Searching the text failed"
+                markdown={`eidos said:\n\n\`\`\`\n${bodies.error.message}\n\`\`\``}
+                detail={showingDetail}
               />
             ) : null}
           </List.Section>
@@ -364,6 +375,21 @@ function EntryDetail(props: { entry: Entry; root: string; snippet?: string }) {
             />
           ))}
         </List.Item.Detail.Metadata>
+      }
+    />
+  );
+}
+
+function NoticeItem(props: { title: string; markdown: string; detail: boolean }) {
+  return (
+    <List.Item
+      icon={{ source: Icon.Info, tintColor: Color.Orange }}
+      title={props.title}
+      detail={props.detail ? <List.Item.Detail markdown={`## ${props.title}\n\n${props.markdown}`} /> : undefined}
+      actions={
+        <ActionPanel>
+          <DownloadAction />
+        </ActionPanel>
       }
     />
   );

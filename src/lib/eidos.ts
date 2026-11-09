@@ -148,3 +148,26 @@ export async function eidosJson<T>(runner: Runner, root: string, args: string[])
     throw new EidosError(said || (cause instanceof Error ? cause.message : String(cause)));
   }
 }
+
+const known = new Map<string, Promise<boolean>>();
+
+// Whether this eidos has a command: `eidos help <command>` exits 0 only where the command exists (`<command> --help`
+// falls back to the general help and exits 0 either way), so an older eidos, one before `eidos search`, is told apart
+// by the exit code rather than by the words of its error.
+export function hasCommand(runner: Runner, command: string): Promise<boolean> {
+  const key = `${runner.file}\0${command}`;
+  const held = known.get(key);
+  if (held) return held;
+  const all = [...runner.lead, "help", command];
+  const asked = run(runner.shell ? quoted(runner.file) : runner.file, runner.shell ? all.map(quoted) : all, {
+    env: runner.env,
+    timeout: 15_000,
+    shell: runner.shell,
+    windowsHide: true,
+  }).then(
+    () => true,
+    () => false,
+  );
+  known.set(key, asked);
+  return asked;
+}
