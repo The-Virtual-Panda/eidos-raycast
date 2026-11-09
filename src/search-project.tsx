@@ -312,7 +312,7 @@ function EntryDetail(props: { entry: Entry; root: string; snippet?: string }) {
       return shown.body ?? "";
     },
     [runner, props.root, entry.file],
-    { execute: Boolean(runner) && entry.kind === "blueprint" },
+    { execute: Boolean(runner) && (entry.kind === "blueprint" || entry.kind === "doc") },
   );
 
   const parts: string[] = [];
@@ -322,7 +322,7 @@ function EntryDetail(props: { entry: Entry; root: string; snippet?: string }) {
     if (entry.task.description) parts.push(entry.task.description);
     if (entry.task.checklists.length > 0)
       parts.push(entry.task.checklists.map((line) => `- ${line.done ? "☑" : "☐"} ${line.text}`).join("\n"));
-  } else if (entry.kind === "blueprint" && body.data) {
+  } else if ((entry.kind === "blueprint" || entry.kind === "doc") && body.data) {
     parts.push(readable(body.data));
   } else {
     parts.push(`# ${entry.title}`);
