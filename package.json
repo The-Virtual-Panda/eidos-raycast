@@ -6,6 +6,7 @@
   "icon": "icon.png",
   "author": "thevirtualpanda",
   "owner": "the-virtual-panda",
+  "access": "public",
   "categories": [
     "Productivity",
     "Documentation"
