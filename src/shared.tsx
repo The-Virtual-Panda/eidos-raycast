@@ -1,14 +1,13 @@
 // What both commands share: the preferences, the projects list, a project's actions, and the view shown when there is
 // no Eidos on this machine (Raycast Extension REQ14).
 import { Action, getPreferenceValues, Icon, Keyboard, List, open, showToast, Toast } from "@raycast/api";
-import { useCachedPromise } from "@raycast/utils";
+import { useCachedPromise, useLocalStorage } from "@raycast/utils";
 import { spawn } from "node:child_process";
 import { appBinary, EidosError } from "./lib/eidos";
 import { DOWNLOAD_URL, openLink } from "./lib/links";
-import { knownProjects, preferenceFolders, type Project } from "./lib/projects";
+import { knownProjects, type Project } from "./lib/projects";
 
 export interface Preferences {
-  projectFolders?: string;
   editor?: { path: string; name: string; bundleId?: string };
   eidosPath?: string;
 }
@@ -17,15 +16,19 @@ export function preferences(): Preferences {
   return getPreferenceValues<Preferences>();
 }
 
+// The folders the person added in Project Folders, beside the app's recent projects and the projects folder.
+export function useProjectFolders() {
+  const { value, setValue, isLoading } = useLocalStorage<string[]>("project-folders", []);
+  return { folders: value ?? [], setFolders: setValue, isLoading };
+}
+
 export function useProjects() {
-  const { projectFolders } = preferences();
-  return useCachedPromise(
-    async (folders: string) => knownProjects({ extraFolders: preferenceFolders(folders) }),
-    [projectFolders ?? ""],
-    {
-      keepPreviousData: true,
-    },
-  );
+  const { folders, isLoading: foldersLoading } = useProjectFolders();
+  const projects = useCachedPromise(async (extra: string[]) => knownProjects({ extraFolders: extra }), [folders], {
+    keepPreviousData: true,
+    execute: !foldersLoading,
+  });
+  return { ...projects, isLoading: projects.isLoading || foldersLoading };
 }
 
 // The app opens the project as it opens a folder handed to it (The Desktop App REQ25), which every version of it does:

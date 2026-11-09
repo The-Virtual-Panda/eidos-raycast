@@ -90,14 +90,17 @@ export function projectsBeneath(folder: string, depth: number): string[] {
   return found;
 }
 
-// The folders a person typed into the preferences, separated by commas, `~` for the home folder.
-export function preferenceFolders(raw: string | undefined, home: string = homedir()): string[] {
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((part) => part.trim())
-    .filter((part) => part !== "")
-    .map((part) => path.resolve(part.replace(/^~(?=$|[\\/])/, home)));
+// The person's Project Folders, as kept: each folder once, by its whole path, in the order added.
+export function withFolders(held: string[], added: string[]): string[] {
+  const out = [...held];
+  for (const folder of added.map((one) => path.resolve(one))) if (!out.includes(folder)) out.push(folder);
+  return out;
+}
+
+// A folder as Raycast's own settings show one: the home folder as `~`.
+export function shownFolder(folder: string, home: string = homedir()): string {
+  if (folder === home) return "~";
+  return folder.startsWith(home + path.sep) ? `~${folder.slice(home.length)}` : folder;
 }
 
 // A project's name as the app's tab shows it: the product its settings name, else its repository's folder, else its own.

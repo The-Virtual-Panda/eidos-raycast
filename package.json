@@ -32,6 +32,13 @@
       "mode": "view"
     },
     {
+      "name": "project-folders",
+      "title": "Project Folders",
+      "subtitle": "Eidos MD",
+      "description": "The folders that hold your Eidos projects, beside the ones Eidos MD opened lately. Each is searched two levels down.",
+      "mode": "view"
+    },
+    {
       "name": "search-project",
       "title": "Search Project",
       "subtitle": "Eidos MD",
@@ -40,14 +47,6 @@
     }
   ],
   "preferences": [
-    {
-      "name": "projectFolders",
-      "title": "More Project Folders",
-      "description": "Folders that hold Eidos projects the app has not opened lately, separated by commas. Each is searched two levels down.",
-      "type": "textfield",
-      "required": false,
-      "placeholder": "~/dev, ~/clients"
-    },
     {
       "name": "editor",
       "title": "Editor",

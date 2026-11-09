@@ -7,7 +7,7 @@ import path from "node:path";
 import { test } from "node:test";
 import { blueprintEntry, docEntries, markedSnippet, matches, taskEntry } from "../src/lib/index";
 import { markdownLink, openLink } from "../src/lib/links";
-import { knownProjects, projectName, projectsFolder, recentProjects } from "../src/lib/projects";
+import { knownProjects, projectName, projectsFolder, recentProjects, shownFolder, withFolders } from "../src/lib/projects";
 
 function project(folder: string, product?: string): string {
   mkdirSync(path.join(folder, ".eidos", "plugins", "eidosmd"), { recursive: true });
@@ -124,4 +124,11 @@ test("the links name the project and the page, and a copied link is relative to 
   assert.equal(openLink("C:\\p", "/b/specs/login.md"), "eidosmd://open?project=C%3A%5Cp&to=%2Fb%2Fspecs%2Flogin.md");
   assert.equal(markdownLink("Login [beta]", "specs/log in.md"), "[Login \\[beta\\]](specs/log%20in.md)");
   assert.equal(markedSnippet("…the [Passke]ys…"), "…the **Passke**ys…");
+});
+
+test("a project folder is added once, by its whole path, and shown with ~ for the home folder", () => {
+  assert.deepEqual(withFolders(["/a"], ["/b", "/a", "/b/"]), ["/a", "/b"]);
+  assert.equal(shownFolder("/home/ana/dev", "/home/ana"), "~/dev");
+  assert.equal(shownFolder("/home/ana", "/home/ana"), "~");
+  assert.equal(shownFolder("/home/anabel/dev", "/home/ana"), "/home/anabel/dev");
 });

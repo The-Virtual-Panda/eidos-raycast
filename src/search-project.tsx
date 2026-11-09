@@ -118,7 +118,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
         <List.EmptyView
           icon={Icon.Folder}
           title="No Eidos projects found"
-          description="Open a project in Eidos MD once, or add the folders that hold your projects in this extension's preferences."
+          description="Open a project in Eidos MD once, or add the folders that hold your projects with Project Folders."
         />
       ) : null}
       {!failure && project && shown ? (

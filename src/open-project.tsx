@@ -2,6 +2,7 @@
 import { Action, ActionPanel, Icon, Keyboard, List } from "@raycast/api";
 import { FileActions, OpenInEditor, openProject, ProjectQuicklink, relativeTime, useProjects } from "./shared";
 import SearchProject from "./search-project";
+import ProjectFolders from "./project-folders";
 
 export default function OpenProject() {
   const { data: projects, isLoading, revalidate } = useProjects();
@@ -11,7 +12,17 @@ export default function OpenProject() {
         <List.EmptyView
           icon={Icon.Folder}
           title="No Eidos projects found"
-          description="Open a project in Eidos MD once, or add the folders that hold your projects in this extension's preferences."
+          description="Open a project in Eidos MD once, or add the folders that hold your projects."
+          actions={
+            <ActionPanel>
+              <Action.Push
+                title="Add Project Folders"
+                icon={Icon.Folder}
+                target={<ProjectFolders />}
+                onPop={revalidate}
+              />
+            </ActionPanel>
+          }
         />
       ) : null}
       {(projects ?? []).map((project) => (
@@ -43,6 +54,16 @@ export default function OpenProject() {
                 <ProjectQuicklink project={project} />
               </ActionPanel.Section>
               <ActionPanel.Section>
+                <Action.Push
+                  title="Manage Project Folders"
+                  icon={Icon.Folder}
+                  target={<ProjectFolders />}
+                  onPop={revalidate}
+                  shortcut={{
+                    macOS: { modifiers: ["cmd", "shift"], key: "m" },
+                    Windows: { modifiers: ["ctrl", "shift"], key: "m" },
+                  }}
+                />
                 <Action
                   title="Reload Projects"
                   icon={Icon.ArrowClockwise}

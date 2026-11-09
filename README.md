@@ -2,7 +2,8 @@
 
 Open your [Eidos](https://eidosmd.com) projects in Eidos MD and search inside one, from Raycast, on macOS and Windows.
 
-- **Open Project** lists the projects this computer knows: the ones Eidos MD opened lately, the ones in your projects folder (Documents/Eidos unless you chose another), and any folders you add in the preferences. Enter opens one in Eidos MD; ⌘F searches it.
+- **Open Project** lists the projects this computer knows: the ones Eidos MD opened lately, the ones in your projects folder (Documents/Eidos unless you chose another), and the folders you add in **Project Folders**. Enter opens one in Eidos MD; ⌘F searches it.
+- **Project Folders** keeps the folders that hold your projects, as Raycast keeps its Script Folders: add one or several, remove one, each searched two levels down.
 - **Search Project** finds a blueprint, a top-level doc, a draft, or a task by its id, its title, or a property as you type, and finds the words inside the blueprints once you pause. Enter opens it in Eidos MD at its own page.
 
 Give either command, or a project's quicklink, a hotkey in Raycast's settings to reach it in one chord.
