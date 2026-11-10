@@ -129,6 +129,9 @@ test("the links name the project and the page, and a copied link is relative to 
   assert.equal(openLink("C:\\p", "/b/specs/login.md"), "eidosmd://open?project=C%3A%5Cp&to=%2Fb%2Fspecs%2Flogin.md");
   assert.equal(markdownLink("Login [beta]", "specs/log in.md"), "[Login \\[beta\\]](specs/log%20in.md)");
   assert.equal(markedSnippet("…the [Passke]ys…"), "…the **Passke**ys…");
+  assert.equal(markedSnippet("… The Format _[What] a [course] is made of_, video…"), "… The Format **What** a **course** is made of, video…");
+  assert.equal(markedSnippet("…## [How] They Compete…"), "…**How** They Compete…");
+  assert.equal(markedSnippet("set the [snake]_case flag"), "set the **snake**_case flag");
 });
 
 test("a project folder is added once, by its whole path, and shown with ~ for the home folder", () => {

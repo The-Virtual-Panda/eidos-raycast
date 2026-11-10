@@ -222,7 +222,13 @@ export async function searchBodies(runner: Runner, root: string, query: string):
   return answer.hits;
 }
 
-// A snippet's match, marked in [ ] by the CLI, drawn bold in markdown.
+// A snippet's match, marked in [ ] by the CLI, drawn bold in markdown. The CLI cuts the snippet from the raw body, so
+// the heading marks and the emphasis marks at a word's edge are dropped first: half of an italic pair would otherwise
+// show as a stray _ or *. A mark inside a word, as in snake_case, stays.
 export function markedSnippet(snippet: string): string {
-  return snippet.replace(/\[([^\]]+)\]/g, "**$1**");
+  const plain = snippet
+    .replace(/(^|\s|…)#{1,6}\s+/g, "$1")
+    .replace(/(^|[\s(…])[_*`~]+(?=\S)/g, "$1")
+    .replace(/(\S)[_*`~]+(?=[\s).,;:!?\]…]|$)/g, "$1");
+  return plain.replace(/\[([^\]]+)\]/g, "**$1**");
 }
