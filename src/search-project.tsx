@@ -3,7 +3,7 @@
 import { Action, ActionPanel, Color, Icon, Keyboard, List } from "@raycast/api";
 import { useCachedPromise, useCachedState, usePromise } from "@raycast/utils";
 import path from "node:path";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { eidosJson, findEidos, hasCommand, type Runner } from "./lib/eidos";
 import { loadIndex, markedSnippet, matches, searchBodies, type BodyHit, type Entry } from "./lib/index";
 import { markdownLink } from "./lib/links";
@@ -34,16 +34,24 @@ export default function SearchProject(props: { initialRoot?: string }) {
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const [chosen, setChosen] = useCachedState<string>("search-project.root", "");
   const [showingDetail, setShowingDetail] = useCachedState<boolean>("search-project.detail", true);
+  // the project Open Project opened this on, until the person switches; a switch is also remembered for next time
+  const [picked, setPicked] = useState(props.initialRoot ?? "");
   const [text, setText] = useState("");
   const [paused, setPaused] = useState("");
 
   const root = useMemo(() => {
     const roots = (projects ?? []).map((project) => project.root);
-    if (props.initialRoot) return props.initialRoot;
+    if (picked && roots.includes(picked)) return picked;
     if (chosen && roots.includes(chosen)) return chosen;
     return roots[0] ?? "";
-  }, [projects, chosen, props.initialRoot]);
+  }, [projects, chosen, picked]);
   const project = (projects ?? []).find((candidate) => candidate.root === root) ?? null;
+
+  function choose(next: string) {
+    if (!next || next === root) return;
+    setPicked(next);
+    setChosen(next);
+  }
 
   useEffect(() => {
     const timer = setTimeout(() => setPaused(text), BODY_DELAY_MS);
@@ -98,7 +106,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
 
   const failure = runner.error ?? index.error;
   const dropdown = (
-    <List.Dropdown tooltip="Project" value={root} onChange={(value) => value && value !== root && setChosen(value)}>
+    <List.Dropdown tooltip="Project" value={root} onChange={choose}>
       {(projects ?? []).map((candidate) => (
         <List.Dropdown.Item
           key={candidate.root}
@@ -109,6 +117,21 @@ export default function SearchProject(props: { initialRoot?: string }) {
       ))}
     </List.Dropdown>
   );
+  // the same choice as the dropdown, in every row's actions, for whoever looks there first
+  const others = (projects ?? []).filter((candidate) => candidate.root !== root);
+  const switcher =
+    others.length > 0 ? (
+      <ActionPanel.Submenu title="Switch Project" icon={Icon.Switch}>
+        {others.map((candidate) => (
+          <Action
+            key={candidate.root}
+            title={candidate.name}
+            icon={{ source: "icon.png" }}
+            onAction={() => choose(candidate.root)}
+          />
+        ))}
+      </ActionPanel.Submenu>
+    ) : null;
 
   return (
     <List
@@ -116,7 +139,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
       filtering={false}
       onSearchTextChange={setText}
       searchBarPlaceholder={project ? `Search ${project.name}` : "Search a project"}
-      searchBarAccessory={props.initialRoot ? undefined : dropdown}
+      searchBarAccessory={dropdown}
       isShowingDetail={showingDetail && !failure}
       throttle
     >
@@ -130,12 +153,19 @@ export default function SearchProject(props: { initialRoot?: string }) {
       ) : null}
       {!failure && project && shown ? (
         <>
+          <List.EmptyView
+            icon={Icon.MagnifyingGlass}
+            title={`Nothing in ${project.name} matches`}
+            description={others.length > 0 ? "Search another project from the menu beside the search bar." : undefined}
+            actions={switcher ? <ActionPanel>{switcher}</ActionPanel> : undefined}
+          />
           <EntrySection
             title="Top-Level Docs"
             entries={shown.docs}
             project={project}
             detail={showingDetail}
             onToggleDetail={() => setShowingDetail(!showingDetail)}
+            switcher={switcher}
           />
           <EntrySection
             title="Blueprints"
@@ -143,6 +173,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
             project={project}
             detail={showingDetail}
             onToggleDetail={() => setShowingDetail(!showingDetail)}
+            switcher={switcher}
           />
           <List.Section title="In the Text" subtitle={textHits.length > 0 ? String(textHits.length) : undefined}>
             {textHits.map((hit) => (
@@ -152,6 +183,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
                 project={project}
                 detail={showingDetail}
                 onToggleDetail={() => setShowingDetail(!showingDetail)}
+                switcher={switcher}
               />
             ))}
             {query.length >= 2 && searchable.data === false ? (
@@ -177,6 +209,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
             project={project}
             detail={showingDetail}
             onToggleDetail={() => setShowingDetail(!showingDetail)}
+            switcher={switcher}
           />
           <EntrySection
             title={query === "" ? "Open Tasks" : "Tasks"}
@@ -184,6 +217,7 @@ export default function SearchProject(props: { initialRoot?: string }) {
             project={project}
             detail={showingDetail}
             onToggleDetail={() => setShowingDetail(!showingDetail)}
+            switcher={switcher}
           />
         </>
       ) : null}
@@ -195,6 +229,7 @@ interface ItemProps {
   project: Project;
   detail: boolean;
   onToggleDetail: () => void;
+  switcher: ReactNode;
 }
 
 function EntrySection(props: ItemProps & { title: string; entries: Entry[] }) {
@@ -207,6 +242,7 @@ function EntrySection(props: ItemProps & { title: string; entries: Entry[] }) {
           project={props.project}
           detail={props.detail}
           onToggleDetail={props.onToggleDetail}
+          switcher={props.switcher}
         />
       ))}
     </List.Section>
@@ -232,7 +268,9 @@ function EntryItem(props: ItemProps & { entry: Entry }) {
       subtitle={entry.id ?? undefined}
       accessories={accessories}
       detail={props.detail ? <EntryDetail entry={entry} root={project.root} /> : undefined}
-      actions={<EntryActions entry={entry} project={project} onToggleDetail={props.onToggleDetail} />}
+      actions={
+        <EntryActions entry={entry} project={project} onToggleDetail={props.onToggleDetail} switcher={props.switcher} />
+      }
     />
   );
 }
@@ -258,12 +296,14 @@ function TextHitItem(props: ItemProps & { hit: BodyHit }) {
       title={hit.title}
       subtitle={props.detail ? (hit.id ?? undefined) : snippet}
       detail={props.detail ? <EntryDetail entry={entry} root={project.root} snippet={hit.snippet} /> : undefined}
-      actions={<EntryActions entry={entry} project={project} onToggleDetail={props.onToggleDetail} />}
+      actions={
+        <EntryActions entry={entry} project={project} onToggleDetail={props.onToggleDetail} switcher={props.switcher} />
+      }
     />
   );
 }
 
-function EntryActions(props: { entry: Entry; project: Project; onToggleDetail: () => void }) {
+function EntryActions(props: { entry: Entry; project: Project; onToggleDetail: () => void; switcher: ReactNode }) {
   const { entry, project } = props;
   const file = path.join(project.root, ...entry.file.split("/"));
   return (
@@ -284,6 +324,7 @@ function EntryActions(props: { entry: Entry; project: Project; onToggleDetail: (
         <FileActions path={file} />
       </ActionPanel.Section>
       <ActionPanel.Section>
+        {props.switcher}
         <Action
           title="Toggle Detail"
           icon={Icon.Sidebar}
