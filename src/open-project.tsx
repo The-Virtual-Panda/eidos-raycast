@@ -1,6 +1,7 @@
 // Open Project (Raycast Extension REQ1, REQ2): the projects this machine knows, opened in Eidos MD.
 import { Action, ActionPanel, Icon, Keyboard, List } from "@raycast/api";
 import { FileActions, OpenInEditor, openProject, ProjectQuicklink, relativeTime, useProjects } from "./shared";
+import { shownFolder } from "./lib/projects";
 import SearchProject from "./search-project";
 import ProjectFolders from "./project-folders";
 
@@ -30,7 +31,7 @@ export default function OpenProject() {
           key={project.root}
           icon={{ source: "icon.png" }}
           title={project.name}
-          subtitle={project.root}
+          subtitle={shownFolder(project.root)}
           keywords={project.root.split(/[\\/]/).filter((part) => part !== "")}
           accessories={
             project.opened
